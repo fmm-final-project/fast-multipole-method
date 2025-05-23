@@ -1,5 +1,4 @@
 import numpy as np
-import struct
 import csv
 
 def generate_uniform_particles_2d(
@@ -27,15 +26,15 @@ def generate_uniform_particles_2d(
         filename (str): 檔名
     """
     # 位置分布
-    x = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float32)
-    y = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float32)
-    z = np.zeros(n_particles, dtype=np.float32)
+    x = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float64)
+    y = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float64)
+    z = np.zeros(n_particles, dtype=np.float64)
 
     # 質量分布
     if mass_std is not None:
-        m = np.random.normal(mass, mass_std, n_particles).astype(np.float32)
+        m = np.random.normal(mass, mass_std, n_particles).astype(np.float64)
     else:
-        m = np.full(n_particles, mass, dtype=np.float32)
+        m = np.full(n_particles, mass, dtype=np.float64)
 
     # 速度分布
     if isinstance(velocity, tuple):
@@ -44,26 +43,24 @@ def generate_uniform_particles_2d(
         v_mean_x = v_mean_y = velocity
 
     if velocity_std is not None:
-        vx = np.random.normal(v_mean_x, velocity_std, n_particles).astype(np.float32)
-        vy = np.random.normal(v_mean_y, velocity_std, n_particles).astype(np.float32)
+        vx = np.random.normal(v_mean_x, velocity_std, n_particles).astype(np.float64)
+        vy = np.random.normal(v_mean_y, velocity_std, n_particles).astype(np.float64)
     else:
-        vx = np.full(n_particles, v_mean_x, dtype=np.float32)
-        vy = np.full(n_particles, v_mean_y, dtype=np.float32)
+        vx = np.full(n_particles, v_mean_x, dtype=np.float64)
+        vy = np.full(n_particles, v_mean_y, dtype=np.float64)
 
-    vz = np.zeros(n_particles, dtype=np.float32)
+    vz = np.zeros(n_particles, dtype=np.float64)
 
     # 合併成 (n, 7)
     particles = np.stack([m, x, y, z, vx, vy, vz], axis=1)
 
     # 儲存 binary 檔（含 header）
     with open(filename + ".bin", "wb") as f:
-        f.write(struct.pack("i", n_particles))  # header
-        particles.astype(np.float32).tofile(f)
+        particles.astype(np.float64).tofile(f)
 
     # 儲存 CSV 檔
     with open(filename + ".csv", "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["mass", "x", "y", "z", "vx", "vy", "vz"])
         writer.writerows(particles)
 
     print(f"Saved {n_particles} particles to '{filename},bin' and '{filename}.csv'.")
@@ -71,7 +68,7 @@ def generate_uniform_particles_2d(
 # 範例呼叫
 if __name__ == "__main__":
     generate_uniform_particles_2d(
-        n_particles=10000,
+        n_particles=100,
         box_size=10.0,
         mass=1.0,
         mass_std=0.1,
