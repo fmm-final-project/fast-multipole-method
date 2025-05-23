@@ -4,22 +4,22 @@
 #include <stdbool.h>
 
 #define G 1.0                      // Gravitational constant
-#define EPSILON 1.0e-9             // Softening factor to prevent division by zero
+#define EPSILON 0.0             // Softening factor to prevent division by zero
 
 #define INIT_LEN 16
 #define MAX_PARTICLES_PER_LEAF 10
 #define MAX_DEPTH 20
-#define HALF_BOX_SIZE 5.0
+#define HALF_BOX_SIZE 100.0
 #define DIM 3
-#define THETA 0.5
+#define THETA 0.1
 
-typedef struct {
+typedef struct{
     double mass;
-    double pos[DIM];   // x, y, z
+    double pos[DIM];
 } Particle;
 
 typedef struct{
-    Particle* arr;
+    int* arr;
     int size;
     int capacity;
 } pList;
@@ -28,7 +28,7 @@ typedef struct octreenode{
     unsigned long long id;
     double center[DIM];
     double half_size;
-    pList* particle_list;
+    pList* pid_list;
     struct octreenode** children_list;
 
     // Multipole expansions
@@ -48,24 +48,32 @@ typedef struct{
     int capacity;
 } oList;
 
-int N;            // Number of particles
+int N;                 // Number of particles
+Particle* particles;   // All particles
+double** forces;       // All forces
+oList* leafNodes;      // All leaf octree nodes
 
 // Basic operations of particle lists
 pList* pListInit(){
     pList* newList = (pList*)malloc(sizeof(pList));
     newList->capacity = INIT_LEN;
     newList->size = 0;
-    newList->arr = (Particle*)malloc(INIT_LEN * sizeof(Particle));
+    newList->arr = (int*)malloc(INIT_LEN * sizeof(int));
     return newList;
 }
 
-void pListInsert(pList* list, Particle particle){
-    list->arr[list->size] = particle;
+void pListInsert(pList* list, int pid){
+    list->arr[list->size] = pid;
     list->size++;
     if(list->size == list->capacity){
         list->capacity *= 2;
-        list->arr = (Particle*)realloc(list->arr, list->capacity * sizeof(Particle));
+        list->arr = (int*)realloc(list->arr, list->capacity * sizeof(int));
     }
+}
+
+void pListFree(pList* list){
+    free(list->arr);
+    free(list);
 }
 
 // Basic operations of octree node lists
@@ -86,70 +94,90 @@ void oListInsert(oList* list, OctreeNode* node){
     }
 }
 
+void oListFree(oList* list){
+    free(list->arr);
+    free(list);
+}
+
+void FreeOctreeNode(OctreeNode* node){
+    pListFree(node->pid_list);
+    free(node->children_list);
+    free(node);
+}
+
+void FreeOctree(OctreeNode* node){
+    if(node->children_list != NULL){
+        for(int i = 0; i < 8; i++){
+            if(node->children_list[i] != NULL) FreeOctree(node->children_list[i]);
+        }
+    }
+    FreeOctreeNode(node);
+}
+
 // Compute which octree child node the particle should go
-int ComputeOctreeIndex(Particle particle, double* center){
-    int x = particle.pos[0] > center[0] ? 1 : 0;
-    int y = particle.pos[1] > center[1] ? 1 : 0;
-    int z = particle.pos[2] > center[2] ? 1 : 0;
+int ComputeOctreeIndex(int pid, double* center){
+    int x = particles[pid].pos[0] > center[0] ? 1 : 0;
+    int y = particles[pid].pos[1] > center[1] ? 1 : 0;
+    int z = particles[pid].pos[2] > center[2] ? 1 : 0;
     return x + 2 * y + 4 * z;
 }
 
 // Compute the center of a child octree node from its parent's center
-double* ComputeChildCenter(double* center, double half_size, int index){
+void ComputeChildCenter(double* center, double half_size, int index, double child_center[]){
     double offset = half_size / 2;
     int x = (index & 1) == 1 ? 1 : -1;
     int y = ((index / 2) & 1) == 1 ? 1 : -1;
     int z = ((index / 4) & 1) == 1 ? 1 : -1;
-    double* child_center = (double*)malloc(DIM * sizeof(double));
     child_center[0] = center[0] + offset * x;
     child_center[1] = center[1] + offset * y;
     child_center[2] = center[2] + offset * z;
-    return child_center;
 }
 
 // Building the octree of given particles
-OctreeNode* BuildOctree(pList* particle_list, double* center, double half_size, int depth, unsigned long long id){
+OctreeNode* BuildOctree(pList* pid_list, double center[], double half_size, int depth, unsigned long long id){
     OctreeNode* node = (OctreeNode*)calloc(1, sizeof(OctreeNode));
     for(int i = 0; i < DIM; i++){
         node->center[i] = center[i];
     }
     node->half_size = half_size;
-    node->particle_list = particle_list;
+    node->pid_list = pid_list;
     node->children_list = NULL;
     node->id = id;
 
-    if(particle_list->size < MAX_PARTICLES_PER_LEAF || depth > MAX_DEPTH){
+    if(pid_list->size < MAX_PARTICLES_PER_LEAF || depth > MAX_DEPTH){
         // Is a leaf node
-        printf("Construct a leaf node id = %llu with %d particles\n", node->id, particle_list->size);
-        for(int i = 0; i < particle_list->size; i++){
-            //printf("%.10e\n", particle_list->arr[i].mass);
-        }
+        printf("Construct a leaf node id = %llu with %d particles\n", node->id, pid_list->size);
+        // Insert into LeafNodes
+        oListInsert(leafNodes, node);
         return node;
     }
 
     // Is an internal node, split children
     node->children_list = (OctreeNode**)malloc(8 * sizeof(OctreeNode*));
-    pList** children_particles = (pList**)malloc(8 * sizeof(pList*));
+    pList** children_pid_lists = (pList**)malloc(8 * sizeof(pList*));
     for(int i = 0; i < 8; i++){
-        children_particles[i] = pListInit();
+        children_pid_lists[i] = pListInit();
     }
 
-    for(int i = 0; i < particle_list->size; i++){
-        int id = ComputeOctreeIndex(particle_list->arr[i], center);
-        pListInsert(children_particles[id], particle_list->arr[i]);
+    for(int i = 0; i < pid_list->size; i++){
+        int octreeIndex = ComputeOctreeIndex(pid_list->arr[i], center);
+        pListInsert(children_pid_lists[octreeIndex], pid_list->arr[i]);
     }
 
     for(int i = 0; i < 8; i++){
-        if(children_particles[i]->size > 0){
-            double* child_center = ComputeChildCenter(center, half_size, i);
+        if(children_pid_lists[i]->size > 0){
+            double child_center[DIM];
+            ComputeChildCenter(center, half_size, i, child_center);
             double child_half_size = half_size / 2.0;
-            node->children_list[i] = BuildOctree(children_particles[i], child_center, child_half_size, depth + 1, id * 8 + i);
+            node->children_list[i] = BuildOctree(children_pid_lists[i], child_center, child_half_size, depth + 1, id * 8 + i);
         }
         else{
+            pListFree(children_pid_lists[i]);
             node->children_list[i] = NULL;
         }
     }
-    printf("Construct an internal node id = %llu with %d nodes\n", node->id, particle_list->size);
+    free(children_pid_lists);
+    printf("Construct an internal node id = %llu with %d nodes\n", node->id, pid_list->size);
     return node;
 }
 
@@ -158,8 +186,8 @@ void ComputeMultipoles(OctreeNode* node){
     //printf("visit node with center x = %.10e\n", node->center[0]);
 
     if(node->children_list == NULL){
-        for(int i = 0; i < node->particle_list->size; i++){
-            Particle particle = node->particle_list->arr[i];
+        for(int i = 0; i < node->pid_list->size; i++){
+            Particle particle = particles[node->pid_list->arr[i]];
             double m = particle.mass;
             double dx[DIM];
             for(int j = 0; j < DIM; j++){
@@ -208,7 +236,7 @@ void ComputeMultipoles(OctreeNode* node){
                 for(int col = 0; col < DIM; col++){
                     node->quadrupole[row][col] += child->quadrupole[row][col]
                                                 + dx[row] * child->dipole[col]
-                                                + child->dipole[row] * dx[col];
+                                                + child->dipole[row] * dx[col]
                                                 + m * dx[row] * dx[col];
                 }
             }
@@ -216,6 +244,26 @@ void ComputeMultipoles(OctreeNode* node){
         }
         printf("internal node id = %llu multipole finished, monopole = %.10e\n", node->id, node->monopole);
     }
+}
+
+bool BoxesOverlap(OctreeNode* a, OctreeNode* b){
+    double ax_min = a->center[0] - a->half_size;
+    double ax_max = a->center[0] + a->half_size;
+    double ay_min = a->center[1] - a->half_size;
+    double ay_max = a->center[1] + a->half_size;
+    double az_min = a->center[2] - a->half_size;
+    double az_max = a->center[2] + a->half_size;
+
+    double bx_min = b->center[0] - b->half_size;
+    double bx_max = b->center[0] + b->half_size;
+    double by_min = b->center[1] - b->half_size;
+    double by_max = b->center[1] + b->half_size;
+    double bz_min = b->center[2] - b->half_size;
+    double bz_max = b->center[2] + b->half_size;
+
+    return !(ax_max < bx_min || ax_min > bx_max ||
+             ay_max < by_min || ay_min > by_max ||
+             az_max < bz_min || az_min > bz_max);
 }
 
 void GetInteractionList(OctreeNode* target, OctreeNode* src, oList* list){
@@ -228,15 +276,17 @@ void GetInteractionList(OctreeNode* target, OctreeNode* src, oList* list){
         dist2 += dx[i] * dx[i];
     }
     double size2 = src->half_size * src->half_size * 4.0;
-    if(src->children_list == NULL && size2 / dist2 > THETA * THETA){
+    if(src->children_list != NULL && size2 / dist2 > THETA * THETA){
         // Not well-seperated
         for(int i = 0; i < 8; i++){
             GetInteractionList(target, src->children_list[i], list);
         }
     }
     else{
-        // Well-seperated
-        oListInsert(list, src);
+        if(!BoxesOverlap(target, src)){
+            // Well-seperated
+            oListInsert(list, src);
+        }
     }
 }
 
@@ -249,7 +299,7 @@ void ComputeLocalExpansions(OctreeNode* node, OctreeNode* root){
         OctreeNode* src = interaction_list->arr[i];
 
         double dx[DIM];
-        double r2 = 0;
+        double r2 = EPSILON;
         for(int j = 0; j < DIM; j++){
             dx[j] = node->center[j] - src->center[j];
             r2 += dx[j] * dx[j];
@@ -277,6 +327,7 @@ void ComputeLocalExpansions(OctreeNode* node, OctreeNode* root){
             }
         }
     }
+    oListFree(interaction_list);
     printf("node id = %llu M2L finished, local monopole = %.10e\n", node->id, node->local_monopole);
 
     // internal nodes L2L to children
@@ -320,32 +371,67 @@ void ComputeLocalExpansions(OctreeNode* node, OctreeNode* root){
     }
 }
 
-void naive_compute_gravity(pList* particles, double forces[][DIM]){
-    for(int i = 0; i < N; i++){
-        forces[i][0] = 0.0;
-        forces[i][1] = 0.0;
-        forces[i][2] = 0.0;
+void ComputeDirectForce(int p1, int p2){
+    if(p1 == p2) return;
+    double dx[DIM];
+    double dist2 = EPSILON;
+    for(int i = 0; i < DIM; i++){
+        dx[i] = particles[p2].pos[i] - particles[p1].pos[i];
+        dist2 += dx[i] * dx[i];
+    }
+    double dist = sqrt(dist2);
+    double force_mag = G * particles[p1].mass * particles[p2].mass / dist2;
 
-        for(int j = 0; j < N; j++){
-            if(i == j) continue;
+    // Directional force components
+    for(int i = 0; i < DIM; i++){
+        forces[p1][i] += force_mag * dx[i] / dist;
+    }
+}
 
-            double dx = particles->arr[j].pos[0] - particles->arr[i].pos[0];
-            double dy = particles->arr[j].pos[1] - particles->arr[i].pos[1];
-            double dz = particles->arr[j].pos[2] - particles->arr[i].pos[2];
+void ComputeForceFromLocalExpansion(int pid, OctreeNode* node){
+    double dx[DIM];
+    for(int i = 0; i < DIM; i++){
+        dx[i] = particles[pid].pos[i] - node->center[i];
+    }
+    double r2 = EPSILON;
+    for(int j = 0; j < DIM; j++) {
+        r2 += dx[j] * dx[j];
+    }
+    double r = sqrt(r2);
+    double rinv3 = 1.0 / (r2 * r);
 
-            double dist_sq = dx*dx + dy*dy + dz*dz + EPSILON;
-            double dist = sqrt(dist_sq);
-            double force_mag = G * particles->arr[i].mass * particles->arr[j].mass / dist_sq;
-
-            // Directional force components
-            forces[i][0] += force_mag * dx / dist;
-            forces[i][1] += force_mag * dy / dist;
-            forces[i][2] += force_mag * dz / dist;
+    for(int i = 0; i < DIM; i++){
+        double grad_phi = node->local_dipole[i];
+        for(int j = 0; j < DIM; j++){
+            grad_phi += node->local_quadrupole[i][j] * dx[j];
         }
+        //grad_phi += node->local_monopole * dx[i] * rinv3;
+        forces[pid][i] -= G * particles[pid].mass * grad_phi;
+    }
+}
+
+void EvaluateForces(OctreeNode* node){
+    for(int i = 0; i < node->pid_list->size; i++){
+        int p1 = node->pid_list->arr[i];
+
+        // Near-field
+        for(int j = 0; j < leafNodes->size; j++){
+            OctreeNode* neighbor = leafNodes->arr[j];
+            if(!BoxesOverlap(node, neighbor)) continue;
+
+            for(int k = 0; k < neighbor->pid_list->size; k++){
+                int p2 = neighbor->pid_list->arr[k];
+                ComputeDirectForce(p1, p2);
+            }
+        }
+
+        // Far-field
+        ComputeForceFromLocalExpansion(p1, node);
     }
 }
 
 int main() {
+    // Input particle data
     FILE *fptr;
     fptr = fopen("particles.bin", "rb");
     if(!fptr){
@@ -375,36 +461,54 @@ int main() {
 
     if(fread(buffer, sizeof(double), num_of_doubles, fptr)){};
 
-    pList* particles = (pList*)malloc(sizeof(pList));
-    particles->arr = (Particle*)malloc(N * sizeof(Particle));
-    particles->capacity = N;
-    particles->size = N;
+    particles = (Particle*)malloc(N * sizeof(Particle));
+    pList* pid_list = (pList*)malloc(sizeof(pList));
+    pid_list->arr = (int*)malloc(N * sizeof(int));
+    pid_list->capacity = N;
+    pid_list->size = N;
     for(int i = 0; i < N; i++){
-        particles->arr[i].mass = buffer[i * 7];
-        particles->arr[i].pos[0] = buffer[i * 7 + 1];
-        particles->arr[i].pos[1] = buffer[i * 7 + 2];
-        particles->arr[i].pos[2] = buffer[i * 7 + 3];
+        pid_list->arr[i] = i;
+        particles[i].mass = buffer[i * 7];
+        particles[i].pos[0] = buffer[i * 7 + 1];
+        particles[i].pos[1] = buffer[i * 7 + 2];
+        particles[i].pos[2] = buffer[i * 7 + 3];
+    }
+    forces = (double**)malloc(N * sizeof(double*));
+    forces[0] = (double*)calloc(DIM * N, sizeof(double));
+    for(int i = 1; i < N; i++){
+        forces[i] = forces[0] + DIM * i;
     }
     fclose(fptr);
+    free(buffer);
 
-    double forces[N][DIM];
+    // Compute gravitational forces
 
+    // Build Octree
     double init_center[] = {0.0, 0.0, 0.0};
+    leafNodes = oListInit();
     printf("Start BuildOctree\n");
-    OctreeNode* root = BuildOctree(particles, init_center, HALF_BOX_SIZE, 0, 1);
+    OctreeNode* root = BuildOctree(pid_list, init_center, HALF_BOX_SIZE, 0, 1);
     printf("Finish BuildOctree\n\n");
 
+    // Upward Pass
     printf("Start Upward Pass\n");
     ComputeMultipoles(root);
     printf("Finish Upward Pass\n\n");
 
+    // Downward Pass
     printf("Start Downward Pass\n");
     ComputeLocalExpansions(root, root);
     printf("Finish Downward Pass\n\n");
 
-    //FMM_compute_gravity(particles, forces);
+    // Evaluate forces for particles inside every leaf nodes
+    printf("Start Evaluation\n");
+    for(int i = 0; i < leafNodes->size; i++){
+        EvaluateForces(leafNodes->arr[i]);
+    }
+    printf("Finish Evaluation\n");
+    oListFree(leafNodes);
+    FreeOctree(root);
 
-    /*
     // Output the force vectors
     FILE* fcsv;
     fcsv = fopen("force.csv", "w");
@@ -413,21 +517,25 @@ int main() {
         exit(1);
     }
     for (int i = 0; i < N; i++) {
-        fprintf(fcsv, "%.10e,%.10e,%.10e\n",forces[i][0], forces[i][1], forces[i][2]);
+        fprintf(fcsv, "%.10e,%.10e,%.10e\n", forces[i][0], forces[i][1], forces[i][2]);
     }
     fclose(fcsv);
 
+    
     FILE* fbin;
     fbin = fopen("force.bin", "wb");
     if(!fbin){
         printf("Failed to open output file!\n");
         exit(1);
     }
-    size_t written = fwrite(forces, sizeof(double), DIM * N, fbin);
+    size_t written = fwrite(forces[0], sizeof(double), DIM * N, fbin);
     if(written != DIM * N){
         printf("Failed to write all data!\n");
     }
     fclose(fbin);
-    */
+    
+    free(particles);
+    free(forces[0]);
+    free(forces);
     return 0;
 }
