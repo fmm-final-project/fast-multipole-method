@@ -1,13 +1,13 @@
 CC      := gcc
 CFLAGS  := -O2 -g
 
-BIN     := tree
+BIN     := tree2fmm
 LIB     := -lm -fopenmp
 
 all: $(BIN)
 
-$(BIN): tree.c
-	$(CC) -o $(BIN) $(CFLAGS) tree.c $(LIB)
+$(BIN): tree2fmm.c
+	$(CC) -o $(BIN) $(CFLAGS) tree2fmm.c $(LIB)
 
 clean:
 	rm -f $(BIN)

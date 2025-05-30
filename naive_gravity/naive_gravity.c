@@ -100,7 +100,7 @@ int main() {
 
     // Output the force vectors
     FILE* fcsv;
-    fcsv = fopen("force.csv", "w");
+    fcsv = fopen("force_direct.csv", "w");
     if(!fcsv){
         printf("Failed to open output file!\n");
         exit(1);
@@ -111,7 +111,7 @@ int main() {
     fclose(fcsv);
 
     FILE* fbin;
-    fbin = fopen("force.bin", "wb");
+    fbin = fopen("force_direct.bin", "wb");
     if(!fbin){
         printf("Failed to open output file!\n");
         exit(1);
