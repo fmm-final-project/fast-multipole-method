@@ -28,7 +28,7 @@ def generate_uniform_particles_2d(
     # 位置分布
     x = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float64)
     y = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float64)
-    z = np.zeros(n_particles, dtype=np.float64)
+    z = np.random.uniform(-box_size/2, box_size/2, n_particles).astype(np.float64)
 
     # 質量分布
     if mass_std is not None:
@@ -68,8 +68,8 @@ def generate_uniform_particles_2d(
 # 範例呼叫
 if __name__ == "__main__":
     generate_uniform_particles_2d(
-        n_particles=100,
-        box_size=10.0,
+        n_particles=100000,
+        box_size=100.0,
         mass=1.0,
         mass_std=0.1,
         velocity=(0.0, 0.0),

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 
 #define G 1.0                    // Gravitational constant
 #define EPSILON 1.0e-9           // Softening factor to prevent division by zero
@@ -12,6 +13,7 @@ typedef struct {
 } Particle;
 
 int N;           // Number of particles
+unsigned long long count = 0;
 
 void compute_gravity(Particle particles[], double forces[][3]){
     for(int i = 0; i < N; i++){
@@ -21,6 +23,7 @@ void compute_gravity(Particle particles[], double forces[][3]){
 
         for(int j = 0; j < N; j++){
             if(i == j) continue;
+            count++;
 
             double dx = particles[j].pos[0] - particles[i].pos[0];
             double dy = particles[j].pos[1] - particles[i].pos[1];
@@ -39,6 +42,8 @@ void compute_gravity(Particle particles[], double forces[][3]){
 }
 
 int main() {
+
+    printf("Start datafile input\n");
     FILE *fptr;
     fptr = fopen("particles.bin", "rb");
     if(!fptr){
@@ -79,10 +84,19 @@ int main() {
         particles[i].vel[2] = buffer[i * 7 + 6];
     }
     fclose(fptr);
+    printf("Finish datafile input\n\n");
 
     double forces[N][3];
 
+    double start, end;
+    printf("Start force evaluation\n");
+    start = omp_get_wtime();
     compute_gravity(particles, forces);
+    end = omp_get_wtime();
+    printf("Finish force evaluation\n\n");
+    printf("Evaluation count: %llu\n", count);
+    double total_time = (end - start) * 1000;
+    printf("Total time: %.3lf ms\n", total_time);
 
     // Output the force vectors
     FILE* fcsv;
@@ -92,7 +106,7 @@ int main() {
         exit(1);
     }
     for (int i = 0; i < N; i++) {
-        fprintf(fcsv, "%.10e,%.10e,%.10e\n",forces[i][0], forces[i][1], forces[i][2]);
+        fprintf(fcsv, "%.10e,%.10e,%.10e\n", forces[i][0], forces[i][1], forces[i][2]);
     }
     fclose(fcsv);
 
@@ -107,6 +121,7 @@ int main() {
         printf("Failed to write all data!\n");
     }
     fclose(fbin);
+    printf("Finish output\n");
 
     return 0;
 }

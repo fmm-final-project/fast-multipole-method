@@ -2,7 +2,7 @@ CC      := gcc
 CFLAGS  := -O2
 
 BIN     := naive_gravity
-LIB     := -lm
+LIB     := -lm -fopenmp
 
 all: $(BIN)
 
