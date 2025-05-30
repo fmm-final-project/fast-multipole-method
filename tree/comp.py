@@ -6,4 +6,5 @@ df2 = pd.read_csv("force_tree.csv", sep=",", header=None)
 
 error = (df1 - df2)**2
 error = np.sqrt(error.sum()) / (len(df1[0]))
-print(error)
+for i in range(3):
+    print("{:.10e}".format(error[i]))

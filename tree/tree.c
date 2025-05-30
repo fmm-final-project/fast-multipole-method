@@ -192,7 +192,7 @@ void evaluateForceOnParticle(Particle* p, Cell* cell){
             r2 += dx[d] * dx[d];
         }
         double r = sqrt(r2);
-        if(cell->halfSize / r < THETA){
+        if(cell->halfSize < r * THETA){
             approx_count++;
             double r3 = r2 * r;
             double r5 = r2 * r3;
@@ -211,14 +211,14 @@ void evaluateForceOnParticle(Particle* p, Cell* cell){
                         double rk = dx[k];
                         double ra = dx[a];
                         double rb = dx[b];
-                        double term1 = (cell->quad[k][b] * rb + cell->quad[a][k] * ra) / r5;
-                        double term2 = 5 * Qab * ra * rb * rk / r7;
-                        quadF[k] += term1 - term2;
+                        double term1 = 3 * ((a == b ? rk : 0) + (b == k ? ra : 0) + (a == k ? rb : 0)) / r5;
+                        double term2 = 15 * ra * rb * rk / r7;
+                        quadF[k] += Qab * (term1 - term2);
                     }
                 }
             }
-            double qpref = 0.5 * G * p->mass;
-            for(int k = 0; k < 3; k++) p->force[k] += qpref * quadF[k];
+            double quadcoeff = -0.5 * G * p->mass;
+            for(int k = 0; k < 3; k++) p->force[k] += quadcoeff * quadF[k];
         }
         else{
             // Too close: recurse downward
@@ -342,6 +342,7 @@ int main(){
     printf("Total execution time: %.3lf ms\n\n", total_time);
 
     // Output the force vectors
+    printf("Start Output\n");
     FILE* fcsv;
     fcsv = fopen(outfile, "w");
     if(!fcsv){
