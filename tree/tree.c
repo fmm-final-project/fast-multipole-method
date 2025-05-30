@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <time.h>
 #include <omp.h>
 
 #define MAX_LINE_LEN 1024
@@ -15,7 +14,7 @@ typedef struct{
 
 typedef struct Cell{
     double center[3];     // cell geometric center
-    double halfSize;      // half the cell edge length
+    double size;      // cell edge length
     double mass;          // total mass (monopole)
     double massCenter[3]; // center of mass
     // dipole vanished by choosing CoM as center
@@ -34,7 +33,6 @@ char outfile[MAX_LINE_LEN];
 
 // Performance
 unsigned long long direct_count = 0;
-unsigned long long approx_count = 0;
 double start, end;
 
 // Create a new cell, compute its center and halfSize from particle extents
@@ -64,7 +62,7 @@ Cell* createCell(Particle** particles, int n){
     double dx = max[0] - min[0];
     double dy = max[1] - min[1];
     double dz = max[2] - min[2];
-    cell->halfSize = 0.5 * fmax(fmax(dx, dy), dz);
+    cell->size = fmax(fmax(dx, dy), dz);
     // Initialize children
     for(int c = 0; c < 8; c++) cell->children[c] = NULL;
     return cell;
@@ -192,8 +190,7 @@ void evaluateForceOnParticle(Particle* p, Cell* cell){
             r2 += dx[d] * dx[d];
         }
         double r = sqrt(r2);
-        if(cell->halfSize < r * THETA){
-            approx_count++;
+        if(cell->size < r * THETA){
             double r3 = r2 * r;
             double r5 = r2 * r3;
             double r7 = r2 * r5;
@@ -335,7 +332,7 @@ int main(){
     printf("Finish Force Evaluation\n");
     double eval_time = (end - start) * 1000;
     printf("Direct eval: %llu\n", direct_count);
-    printf("Approx eval: %llu\n", approx_count);
+    printf("Direct ratio: %.5f\n", (float) direct_count / (N * (N - 1)));
     printf("Evaluation time: %.3lf ms\n\n", eval_time);
 
     double total_time = build_time + expansion_time + eval_time;
