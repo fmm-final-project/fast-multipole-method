@@ -4,14 +4,14 @@
 #include <stdbool.h>
 
 #define G 1.0                      // Gravitational constant
-#define EPSILON 0.0             // Softening factor to prevent division by zero
+#define EPSILON 0.0                // Softening factor to prevent division by zero
 
 #define INIT_LEN 16
 #define MAX_PARTICLES_PER_LEAF 10
 #define MAX_DEPTH 20
 #define HALF_BOX_SIZE 100.0
 #define DIM 3
-#define THETA 0.1
+#define THETA 0.3
 
 typedef struct{
     double mass;
@@ -208,6 +208,7 @@ void ComputeMultipoles(OctreeNode* node){
                     node->quadrupole[row][col] += m * dx[row] * dx[col];
                 }
             }
+
         }
         printf("leaf id = %llu multipole finished, monopole = %.10e\n", node->id, node->monopole);
     }
@@ -326,6 +327,7 @@ void ComputeLocalExpansions(OctreeNode* node, OctreeNode* root){
                                                  + src->quadrupole[row][col] * rinv5;
             }
         }
+
     }
     oListFree(interaction_list);
     printf("node id = %llu M2L finished, local monopole = %.10e\n", node->id, node->local_monopole);
@@ -343,12 +345,14 @@ void ComputeLocalExpansions(OctreeNode* node, OctreeNode* root){
 
             // monopole
             child->local_monopole = node->local_monopole;
+
             for(int row = 0; row < DIM; row++){
                 child->local_monopole += node->local_dipole[row] * dx[row];
                 for(int col = 0; col < DIM; col++){
                     child->local_monopole += 0.5 * node->local_quadrupole[row][col] * dx[row] * dx[col];
                 }
             }
+
 
             // dipole
             for(int row = 0; row < DIM; row++){
@@ -364,7 +368,7 @@ void ComputeLocalExpansions(OctreeNode* node, OctreeNode* root){
                     child->local_quadrupole[row][col] = node->local_quadrupole[row][col];
                 }
             }
-            
+
             //printf("node id = %llu child node L2L finished\n", node->id);
             ComputeLocalExpansions(child, root);
         }
@@ -401,11 +405,12 @@ void ComputeForceFromLocalExpansion(int pid, OctreeNode* node){
     double rinv3 = 1.0 / (r2 * r);
 
     for(int i = 0; i < DIM; i++){
+        
         double grad_phi = node->local_dipole[i];
         for(int j = 0; j < DIM; j++){
             grad_phi += node->local_quadrupole[i][j] * dx[j];
         }
-        //grad_phi += node->local_monopole * dx[i] * rinv3;
+        grad_phi += node->local_monopole * dx[i] * rinv3;
         forces[pid][i] -= G * particles[pid].mass * grad_phi;
     }
 }
@@ -511,7 +516,7 @@ int main() {
 
     // Output the force vectors
     FILE* fcsv;
-    fcsv = fopen("force.csv", "w");
+    fcsv = fopen("force_fmm.csv", "w");
     if(!fcsv){
         printf("Failed to open output file!\n");
         exit(1);
