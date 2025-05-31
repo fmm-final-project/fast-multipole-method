@@ -1,21 +1,21 @@
 Start Building Octree
 Finish Building Octree
-Building time: 20.425 ms
+Building time: 22.054 ms
 
 Start Multipole Expansion
 Finish Multipole Expansion
-Expansion time: 7.717 ms
+Expansion time: 4.597 ms
 
 Start Dual Tree Walk
 Finish Dual Tree Walk
-Dual Tree Walk time: 22898.234 ms
+Dual Tree Walk time: 3449.495 ms
 Start Local Passing Down
 Finish Local Passing Down
-Local Passing Down time: 3.653 ms
+Local Passing Down time: 4.361 ms
 Direct count 375288652
-Direct Ratio = 26.616869 %
+Direct Ratio = 3.752924 %
 
-Total execution time: 22930.029 ms
+Total execution time: 3480.507 ms
 
 Start Output
 Finish Output

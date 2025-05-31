@@ -4,7 +4,7 @@
 #include <omp.h>
 
 #define G 1.0                    // Gravitational constant
-#define EPSILON 1.0e-9           // Softening factor to prevent division by zero
+#define EPSILON 1.0e-12          // Softening factor to prevent division by zero
 
 typedef struct {
     double mass;
@@ -99,6 +99,7 @@ int main() {
     printf("Total time: %.3lf ms\n", total_time);
 
     // Output the force vectors
+    printf("Start output\n");
     FILE* fcsv;
     fcsv = fopen("force_direct.csv", "w");
     if(!fcsv){
