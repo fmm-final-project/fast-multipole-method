@@ -5,6 +5,7 @@
 #include <omp.h>
 
 #define MAX_LINE_LEN 1024
+#define EPSILON 1e-12
 
 typedef struct{
     double x[3];
@@ -130,14 +131,14 @@ void computeMassDistribution(Cell *cell){
         // Quadrupole
         for(int i = 0; i < cell->nParticles; i++){
             Particle* p = cell->particles[i];
-            double dx[3], r2 = 0;
+            double dx[3], r2 = EPSILON;
             for (int d = 0; d < 3; d++){
                 dx[d] = p->x[d] - cell->massCenter[d];
                 r2 += dx[d] * dx[d];
             }
             for (int a = 0; a < 3; a++) {
                 for (int b = 0; b < 3; b++) {
-                    cell->quad[a][b] += p->mass * (3*dx[a]*dx[b] - (a==b ? r2 : 0.0));
+                    cell->quad[a][b] += p->mass * (3 * dx[a] * dx[b] - (a==b ? r2 : 0.0));
                 }
             }
         }
@@ -155,14 +156,14 @@ void computeMassDistribution(Cell *cell){
         for(int c = 0; c < 8; c++){
             if(!cell->children[c]) continue;
             Cell* ch = cell->children[c];
-            double dC[3], r2 = 0;
+            double dC[3], r2 = EPSILON;
             for(int d = 0; d < 3; d++){
                 dC[d] = ch->massCenter[d] - cell->massCenter[d];
                 r2 += dC[d] * dC[d];
             }
             for(int a = 0; a < 3; a++){
                 for(int b = 0; b < 3; b++){
-                    cell->quad[a][b] += ch->quad[a][b] + ch->mass * (3*dC[a]*dC[b] - (a==b ? r2 : 0.0));
+                    cell->quad[a][b] += ch->quad[a][b] + ch->mass * (3 * dC[a] * dC[b] - (a==b ? r2 : 0.0));
                 }
             }
         }
@@ -183,7 +184,7 @@ void dualTreeWalk(Cell* A, Cell* B){
         return;
     }
 
-    double dx[3], r2 = 1e-12;
+    double dx[3], r2 = EPSILON;
     for(int d = 0; d < 3; d++){
         dx[d] = B->massCenter[d] - A->massCenter[d];
         r2 += dx[d] * dx[d];
@@ -196,7 +197,7 @@ void dualTreeWalk(Cell* A, Cell* B){
         double r3 = r2 * r;
         double r5 = r2 * r3;
         double r7 = r2 * r5;
-        double c1 = -1.5 * G / r5;
+        double c1 = -3.0 * G / r5;
         double c2 = 7.5 * G / r7;
 
         // Compute L1
@@ -294,10 +295,10 @@ void dualTreeWalk(Cell* A, Cell* B){
                 Particle *q = B->particles[j];
                 if(p == q) continue;
                 direct_count += 2;
-                double dx[3], r2 = 1e-12;
+                double dx[3], r2 = EPSILON;
                 for(int d = 0; d < 3; d++){
                     dx[d] = p->x[d] - q->x[d];
-                    r2 += dx[d]*dx[d];
+                    r2 += dx[d] * dx[d];
                 }
                 double inv3 = 1.0 / (r2 * sqrt(r2));
                 double f = -G * p->mass * q->mass * inv3;
@@ -340,7 +341,7 @@ void localPassDown(Cell* cell){
                 Particle* q = cell->particles[j];
                 if(p == q) continue;
                 direct_count += 2;
-                double dx[3], r2 = 1e-12;
+                double dx[3], r2 = EPSILON;
                 for(int d = 0; d < 3; d++){
                     dx[d] = p->x[d] - q->x[d];
                     r2 += dx[d] * dx[d];
@@ -473,7 +474,7 @@ int main(){
     end = omp_get_wtime();
     printf("Finish Dual Tree Walk\n");
     double dual_time = (end - start) * 1000;
-    printf("Dual Tree Walk time: %.3lf ms\n", dual_time);
+    printf("Dual Tree Walk time: %.3lf ms\n\n", dual_time);
 
     // Compute L2L and evaluation
     printf("Start Local Passing Down\n");
@@ -482,7 +483,7 @@ int main(){
     end = omp_get_wtime();
     printf("Finish Local Passing Down\n");
     double local_time = (end - start) * 1000;
-    printf("Local Passing Down time: %.3lf ms\n", local_time);
+    printf("Local Passing Down time: %.3lf ms\n\n", local_time);
     printf("Direct count %llu\n", direct_count);
     printf("Direct Ratio = %f %%\n\n", direct_count * 100.0 / N / (N - 1));
 

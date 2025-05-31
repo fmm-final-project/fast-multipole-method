@@ -1,5 +1,5 @@
 CC      := gcc
-CFLAGS  := -O2 -g
+CFLAGS  := -O3 -march=native -g
 
 BIN     := tree2fmm
 LIB     := -lm -fopenmp

@@ -200,22 +200,15 @@ void evaluateForceOnParticle(Particle* p, Cell* cell){
                 p->force[d] += monoF * dx[d];
             }
             // Quadrupole
-            double quadF[3] = {0.0, 0.0, 0.0};
-            for(int a = 0; a < 3; a++){
-                for(int b = 0; b < 3; b++){
-                    double Qab = cell->quad[a][b];
-                    for(int k = 0; k < 3; k++){
-                        double rk = dx[k];
-                        double ra = dx[a];
-                        double rb = dx[b];
-                        double term1 = 3 * ((a == b ? rk : 0) + (b == k ? ra : 0) + (a == k ? rb : 0)) / r5;
-                        double term2 = 15 * ra * rb * rk / r7;
-                        quadF[k] += Qab * (term1 - term2);
-                    }
-                }
+            double c1 = -3.0 * G * p->mass / r5;
+            double c2 = 7.5 * G * p->mass / r7;
+            double Q_r[3] = {0.0, 0.0, 0.0};
+            for(int i = 0; i < 3; i++){
+                Q_r[i] = cell->quad[i][0] * dx[0] + cell->quad[i][1] * dx[1] + cell->quad[i][2] * dx[2];
             }
-            double quadcoeff = -0.5 * G * p->mass;
-            for(int k = 0; k < 3; k++) p->force[k] += quadcoeff * quadF[k];
+            double r_Q_r = dx[0] * Q_r[0] + dx[1] * Q_r[1] + dx[2] * Q_r[2];
+            for(int k = 0; k < 3; k++) p->force[k] += c1 * Q_r[k] + c2 * r_Q_r * dx[k];
+            
         }
         else{
             // Too close: recurse downward
@@ -331,9 +324,10 @@ int main(){
     end = omp_get_wtime();
     printf("Finish Force Evaluation\n");
     double eval_time = (end - start) * 1000;
-    printf("Direct eval: %llu\n", direct_count);
-    printf("Direct ratio: %.5f %%\n", direct_count * 100.0 / N / (N - 1));
     printf("Evaluation time: %.3lf ms\n\n", eval_time);
+
+    printf("Direct eval: %llu\n", direct_count);
+    printf("Direct ratio: %.5f %%\n\n", direct_count * 100.0 / N / (N - 1));
 
     double total_time = build_time + expansion_time + eval_time;
     printf("Total execution time: %.3lf ms\n\n", total_time);
