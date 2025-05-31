@@ -71,12 +71,12 @@ Cell* createCell(Particle** particles, int n){
 }
 
 void subdivideCell(Cell *cell){
-    if (cell->nParticles <= MAX_PARTICLES_PER_CELL) return;
+    if(cell->nParticles <= MAX_PARTICLES_PER_CELL) return;
 
     // Distribute particles into octants
     Particle** plist = cell->particles;
     int counts[8] = {0};
-    for (int i = 0; i < cell->nParticles; i++) {
+    for(int i = 0; i < cell->nParticles; i++){
         Particle* p = plist[i];
         int idx = (p->x[0] > cell->center[0])
                 + 2 * (p->x[1] > cell->center[1])
@@ -188,16 +188,16 @@ void dualTreeWalk(Cell* A, Cell* B){
         dx[d] = B->massCenter[d] - A->massCenter[d];
         r2 += dx[d] * dx[d];
     }
-    double r = sqrt(r2);
 
     // Well-separated
-    if(A->size + B->size < r * THETA){
+    double S = A->size + B->size;
+    if(S * S < r2 * THETA * THETA){
+        double r = sqrt(r2);
         double r3 = r2 * r;
         double r5 = r2 * r3;
         double r7 = r2 * r5;
-        double r9 = r2 * r7;
         double c1 = -1.5 * G / r5;
-        double c2 = -7.5 * G / r7;
+        double c2 = 7.5 * G / r7;
 
         // Compute L1
         for(int i = 0; i < 3; i++){
@@ -219,43 +219,6 @@ void dualTreeWalk(Cell* A, Cell* B){
         }
         double r_QB_r = (-dx[0]) * QB_r[0] + (-dx[1]) * QB_r[1] + (-dx[2]) * QB_r[2];
         for(int k = 0; k < 3; k++) A->L1[k] += c1 * QB_r[k] + c2 * r_QB_r * (-dx[k]);
-
-//      Old 54 flops
-/*
-        double quadB[3] = {0.0, 0.0, 0.0};
-        for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++){
-                double QAij = A->quad[i][j];
-                for(int k = 0; k < 3; k++){
-                    double ri = dx[i];
-                    double rj = dx[j];
-                    double rk = dx[k];
-                    double term1 = 3 * ((i == j ? rk : 0) + (i == k ? rj : 0) + (j == k ? ri : 0)) / r5;
-                    double term2 = 15 * ri * rj * rk / r7;
-                    quadB[k] += QAij * (term1 - term2);
-                }
-            }
-        }
-        double quadBcoeff = -0.5 * G;
-        for(int k = 0; k < 3; k++) B->L1[k] += quadBcoeff * quadB[k];
-
-        double quadA[3] = {0.0, 0.0, 0.0};
-        for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++){
-                double QBij = B->quad[i][j];
-                for(int k = 0; k < 3; k++){
-                    double ri = -dx[i];
-                    double rj = -dx[j];
-                    double rk = -dx[k];
-                    double term1 = 3 * ((i == j ? rk : 0) + (i == k ? rj : 0) + (j == k ? ri : 0)) / r5;
-                    double term2 = 15 * ri * rj * rk / r7;
-                    quadA[k] += QBij * (term1 - term2);
-                }
-            }
-        }
-        double quadAcoeff = -0.5 * G;
-        for(int k = 0; k < 3; k++) A->L1[k] += quadAcoeff * quadA[k];
-*/
 
         // Compute L2
         for(int i = 0; i < 3; i++){
@@ -292,27 +255,33 @@ void dualTreeWalk(Cell* A, Cell* B){
     int A_internal = (A->nParticles == 0);
     int B_internal = (B->nParticles == 0);
 
-    if (A_internal && B_internal) {
-        // Simultaneously open both for symmetric interactions
-        for (int i = 0; i < 8; i++) {
-            if (!A->children[i]) continue;
-            for (int j = 0; j < 8; j++) {
-                if (!B->children[j]) continue;
-                dualTreeWalk(A->children[i], B->children[j]);
+    if(A_internal && B_internal){
+        // Open the larger one
+        if(A->size >= B->size){
+            for(int i = 0; i < 8; i++){
+                if(!A->children[i]) continue;
+                dualTreeWalk(A->children[i], B);
             }
         }
+        else{
+            for(int i = 0; i < 8; i++){
+                if(!B->children[i]) continue;
+                dualTreeWalk(A, B->children[i]);
+            }
+        }
+        
     }
-    else if (A_internal) {
+    else if(A_internal){
         // Only A can open
-        for (int i = 0; i < 8; i++) {
-            if (!A->children[i]) continue;
+        for(int i = 0; i < 8; i++) {
+            if(!A->children[i]) continue;
             dualTreeWalk(A->children[i], B);
         }
     }
-    else if (B_internal) {
+    else if(B_internal){
         // Only B can open
-        for (int j = 0; j < 8; j++) {
-            if (!B->children[j]) continue;
+        for(int j = 0; j < 8; j++){
+            if(!B->children[j]) continue;
             dualTreeWalk(A, B->children[j]);
         }
     }
@@ -346,7 +315,6 @@ void localPassDown(Cell* cell){
     if(cell->nParticles == 0){
         for(int i = 0; i < 8; i++){
             if(cell->children[i]){
-                //printf("local pass down\n");
                 Cell* ch = cell->children[i];
                 double dx[3];
                 for(int a = 0; a < 3; a++){
@@ -368,10 +336,10 @@ void localPassDown(Cell* cell){
         for(int i = 0; i < cell->nParticles; i++){
             Particle* p = cell->particles[i];
             // Direct summation
-            for(int j = 0; j < cell->nParticles; j++){
+            for(int j = i + 1; j < cell->nParticles; j++){
                 Particle* q = cell->particles[j];
                 if(p == q) continue;
-                direct_count++;
+                direct_count += 2;
                 double dx[3], r2 = 1e-12;
                 for(int d = 0; d < 3; d++){
                     dx[d] = p->x[d] - q->x[d];
@@ -381,11 +349,11 @@ void localPassDown(Cell* cell){
                 double f = -G * p->mass * q->mass * inv3;
                 for(int d = 0; d < 3; d++){
                     p->force[d] += f * dx[d];
+                    q->force[d] -= f * dx[d];
                 }
             }
 
             // From local expansion
-            //printf("local expansion eval\n");
             double dx[3];
             for(int d = 0; d < 3; d++){
                 dx[d] = p->x[d] - cell->massCenter[d];
@@ -516,7 +484,7 @@ int main(){
     double local_time = (end - start) * 1000;
     printf("Local Passing Down time: %.3lf ms\n", local_time);
     printf("Direct count %llu\n", direct_count);
-    printf("Direct Ratio = %f %%\n\n", direct_count * 100.0 / (N * (N - 1)));
+    printf("Direct Ratio = %f %%\n\n", direct_count * 100.0 / N / (N - 1));
 
     double total_time = build_time + expansion_time + dual_time + local_time;
     printf("Total execution time: %.3lf ms\n\n", total_time);
@@ -538,5 +506,6 @@ int main(){
     free(plist);
     freeTree(root);
     free(particles);
+    free(buffer);
     return 0;
 }

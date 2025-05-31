@@ -69,12 +69,12 @@ Cell* createCell(Particle** particles, int n){
 }
 
 void subdivideCell(Cell *cell){
-    if (cell->nParticles <= MAX_PARTICLES_PER_CELL) return;
+    if(cell->nParticles <= MAX_PARTICLES_PER_CELL) return;
 
     // Distribute particles into octants
     Particle** plist = cell->particles;
     int counts[8] = {0};
-    for (int i = 0; i < cell->nParticles; i++) {
+    for(int i = 0; i < cell->nParticles; i++){
         Particle* p = plist[i];
         int idx = (p->x[0] > cell->center[0])
                 + 2 * (p->x[1] > cell->center[1])
@@ -294,8 +294,8 @@ int main(){
     }
     if(fread(buffer, sizeof(double), num_of_doubles, fptr)){};
 
-    Particle **plist = malloc(N * sizeof(Particle*));
-    Particle *particles = malloc(N * sizeof(Particle));
+    Particle** plist = (Particle**)malloc(N * sizeof(Particle*));
+    Particle* particles = (Particle*)malloc(N * sizeof(Particle));
     for(int i = 0; i < N; i++){
         particles[i].mass = buffer[i * 7];
         particles[i].x[0] = buffer[i * 7 + 1];
@@ -332,7 +332,7 @@ int main(){
     printf("Finish Force Evaluation\n");
     double eval_time = (end - start) * 1000;
     printf("Direct eval: %llu\n", direct_count);
-    printf("Direct ratio: %.5f\n", (float) direct_count / (N * (N - 1)));
+    printf("Direct ratio: %.5f %%\n", direct_count * 100.0 / N / (N - 1));
     printf("Evaluation time: %.3lf ms\n\n", eval_time);
 
     double total_time = build_time + expansion_time + eval_time;
@@ -355,5 +355,6 @@ int main(){
     free(plist);
     freeTree(root);
     free(particles);
+    free(buffer);
     return 0;
 }
