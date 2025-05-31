@@ -14,7 +14,7 @@ typedef struct{
 
 typedef struct Cell{
     double center[3];     // cell geometric center
-    double size;      // cell edge length
+    double size;          // cell edge length
     double mass;          // total mass (monopole)
     double massCenter[3]; // center of mass
     // dipole vanished by choosing CoM as center
@@ -196,6 +196,8 @@ void dualTreeWalk(Cell* A, Cell* B){
         double r5 = r2 * r3;
         double r7 = r2 * r5;
         double r9 = r2 * r7;
+        double c1 = -1.5 * G / r5;
+        double c2 = -7.5 * G / r7;
 
         // Compute L1
         for(int i = 0; i < 3; i++){
@@ -203,6 +205,23 @@ void dualTreeWalk(Cell* A, Cell* B){
             A->L1[i] += -G * B->mass * (-dx[i]) / r3;
         }
 
+        // New 25 flops
+        double QA_r[3] = {0.0, 0.0, 0.0};
+        for(int i = 0; i < 3; i++){
+            QA_r[i] = A->quad[i][0] * dx[0] + A->quad[i][1] * dx[1] + A->quad[i][2] * dx[2];
+        }
+        double r_QA_r = dx[0] * QA_r[0] + dx[1] * QA_r[1] + dx[2] * QA_r[2];
+        for(int k = 0; k < 3; k++) B->L1[k] += c1 * QA_r[k] + c2 * r_QA_r * dx[k];
+
+        double QB_r[3] = {0.0, 0.0, 0.0};
+        for(int i = 0; i < 3; i++){
+            QB_r[i] = B->quad[i][0] * (-dx[0]) + B->quad[i][1] * (-dx[1]) + B->quad[i][2] * (-dx[2]);
+        }
+        double r_QB_r = (-dx[0]) * QB_r[0] + (-dx[1]) * QB_r[1] + (-dx[2]) * QB_r[2];
+        for(int k = 0; k < 3; k++) A->L1[k] += c1 * QB_r[k] + c2 * r_QB_r * (-dx[k]);
+
+//      Old 54 flops
+/*
         double quadB[3] = {0.0, 0.0, 0.0};
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
@@ -236,6 +255,7 @@ void dualTreeWalk(Cell* A, Cell* B){
         }
         double quadAcoeff = -0.5 * G;
         for(int k = 0; k < 3; k++) A->L1[k] += quadAcoeff * quadA[k];
+*/
 
         // Compute L2
         for(int i = 0; i < 3; i++){
