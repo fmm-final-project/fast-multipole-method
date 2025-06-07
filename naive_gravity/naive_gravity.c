@@ -72,8 +72,14 @@ int main() {
     }
 
     if(fread(buffer, sizeof(double), num_of_doubles, fptr)){};
+    Particle* particles = (Particle*)malloc(sizeof(Particle) * N);
+    if (!particles) {
+        printf("Memory allocate failed\n");
+        free(buffer);
+        fclose(fptr);
+        exit(1);
+    }
 
-    Particle particles[N];
     for(int i = 0; i < N; i++){
         particles[i].mass = buffer[i * 7];
         particles[i].pos[0] = buffer[i * 7 + 1];
@@ -86,7 +92,14 @@ int main() {
     fclose(fptr);
     printf("Finish datafile input\n\n");
 
-    double forces[N][3];
+    double (*forces)[3] = malloc(sizeof(double) * N * 3);
+    if (!forces) {
+        printf("Memory allocate failed\n");
+        free(buffer);
+        free(particles);
+        fclose(fptr);
+        exit(1);
+    }
 
     double start, end;
     printf("Start force evaluation\n");
@@ -123,6 +136,10 @@ int main() {
     }
     fclose(fbin);
     printf("Finish output\n");
+
+    free(forces);
+    free(buffer);
+    free(particles);
 
     return 0;
 }
