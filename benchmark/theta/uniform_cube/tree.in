@@ -5,6 +5,6 @@
 # MAX_PARTICLES_PER_CELL
 10
 # datafile
-uniform_cube_3d_1e6.bin
+datafile/uniform_cube_3d_1e6.bin
 # outfile
-force_theta_0.8.csv
+fmm_output/force_theta_0.80000.csv

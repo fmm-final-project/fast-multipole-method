@@ -1,7 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("summary_results.csv")
+outfolder = 'fmm_output/'
+df = pd.read_csv(outfolder + "summary_results_fmm.csv")
 
 # ----------- Plot 1: Error vs Theta -----------
 plt.figure(figsize=(8, 6))
@@ -14,7 +15,7 @@ plt.title("Force Error vs Theta")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("error_vs_theta.png")
+plt.savefig(outfolder + "error_vs_theta.png")
 plt.show()
 
 # ----------- Plot 2: Time vs Theta -----------
@@ -30,5 +31,5 @@ plt.title("Execution Time vs Theta")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("time_vs_theta.png")
+plt.savefig(outfolder + "time_vs_theta.png")
 plt.show()
