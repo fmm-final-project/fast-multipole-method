@@ -16,14 +16,17 @@ int N;           // Number of particles
 unsigned long long count = 0;
 
 void compute_gravity(Particle particles[], double forces[][3]){
+    #pragma omp parallel for schedule(static)
     for(int i = 0; i < N; i++){
+        unsigned long long local_count = 0;
+
         forces[i][0] = 0.0;
         forces[i][1] = 0.0;
         forces[i][2] = 0.0;
 
         for(int j = 0; j < N; j++){
             if(i == j) continue;
-            count++;
+            local_count++;
 
             double dx = particles[j].pos[0] - particles[i].pos[0];
             double dy = particles[j].pos[1] - particles[i].pos[1];
@@ -38,10 +41,14 @@ void compute_gravity(Particle particles[], double forces[][3]){
             forces[i][1] += force_mag * dy / dist;
             forces[i][2] += force_mag * dz / dist;
         }
+        #pragma omp atomic
+        count += local_count;
     }
 }
 
 int main() {
+
+    omp_set_num_threads(24);
 
     printf("Start datafile input\n");
     FILE *fptr;
@@ -103,6 +110,7 @@ int main() {
 
     double start, end;
     printf("Start force evaluation\n");
+    fflush(stdout);
     start = omp_get_wtime();
     compute_gravity(particles, forces);
     end = omp_get_wtime();
