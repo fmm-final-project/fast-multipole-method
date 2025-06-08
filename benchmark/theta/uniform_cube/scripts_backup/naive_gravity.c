@@ -52,11 +52,12 @@ int main() {
 
     printf("Start datafile input\n");
     FILE *fptr;
-    fptr = fopen("particles.bin", "rb");
+    fptr = fopen("uniform_cube_3d_1e6.bin", "rb");
     if(!fptr){
         printf("Error opening file!\n");
         exit(1);
     }
+
 
     fseek(fptr, 0, SEEK_END);
     int file_size = ftell(fptr);
@@ -86,7 +87,6 @@ int main() {
         fclose(fptr);
         exit(1);
     }
-
     for(int i = 0; i < N; i++){
         particles[i].mass = buffer[i * 7];
         particles[i].pos[0] = buffer[i * 7 + 1];
@@ -121,7 +121,7 @@ int main() {
     // Output the force vectors
     printf("Start output\n");
     FILE* fcsv;
-    fcsv = fopen("force_direct.csv", "w");
+    fcsv = fopen("force_direct_uniform_cube_3d_1e6.csv", "w");
     if(!fcsv){
         printf("Failed to open output file!\n");
         exit(1);
@@ -132,7 +132,7 @@ int main() {
     fclose(fcsv);
 
     FILE* fbin;
-    fbin = fopen("force_direct.bin", "wb");
+    fbin = fopen("force_direct_uniform_cube_3d_1e6.bin", "wb");
     if(!fbin){
         printf("Failed to open output file!\n");
         exit(1);
