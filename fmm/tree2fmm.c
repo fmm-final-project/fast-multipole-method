@@ -397,7 +397,6 @@ int main(){
             if(sscanf(line, "%s", outfile)){}
         }
     }
-
     fclose(fp);
 
     // Input particle data
