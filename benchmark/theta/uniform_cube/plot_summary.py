@@ -1,8 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-outfolder = 'fmm_output/'
-df = pd.read_csv(outfolder + "summary_results_fmm.csv")
+outfolder = 'tree_output/'
+df = pd.read_csv(outfolder + "summary_results_tree.csv")
 
 # ----------- Plot 1: Error vs Theta -----------
 plt.figure(figsize=(8, 6))
@@ -22,8 +22,8 @@ plt.show()
 plt.figure(figsize=(8, 6))
 plt.plot(df["theta"], df["Building time"], marker='o', label="Building time")
 plt.plot(df["theta"], df["Expansion time"], marker='s', label="Expansion time")
-plt.plot(df["theta"], df["Dual Tree Walk time"], marker='^', label="Dual Tree Walk time")
-plt.plot(df["theta"], df["Local Passing Down time"], marker='d', label="Local Passing Down time")
+# plt.plot(df["theta"], df["Dual Tree Walk time"], marker='^', label="Dual Tree Walk time")
+# plt.plot(df["theta"], df["Local Passing Down time"], marker='d', label="Local Passing Down time")
 plt.plot(df["theta"], df["Total execution time"], marker='x', label="Total execution time")
 plt.xlabel("Theta")
 plt.ylabel("Time (ms)")
