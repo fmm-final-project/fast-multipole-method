@@ -30,6 +30,7 @@ double THETA;
 int MAX_PARTICLES_PER_CELL;
 char datafile[MAX_LINE_LEN];
 char outfile[MAX_LINE_LEN];
+int NUM_OF_THREADS;
 
 // Performance
 unsigned long long direct_count = 0;
@@ -233,8 +234,10 @@ void freeTree(Cell* cell){
 }
 
 int main(){
-    omp_set_num_threads(8);
 
+    printf("Start Input\n");
+    fflush(stdout);
+    start = omp_get_wtime();
     FILE *fp = fopen("tree.in", "r");
     if(!fp){
         printf("Failed to open file\n");
@@ -262,9 +265,12 @@ int main(){
         else if(lcount == 5){
             if(sscanf(line, "%s", outfile)){}
         }
+        else if(lcount == 6){
+            if(sscanf(line, "%d", &NUM_OF_THREADS));
+        }
     }
-
     fclose(fp);
+    omp_set_num_threads(NUM_OF_THREADS);
 
     // Input particle data
     FILE *fptr;
@@ -284,9 +290,6 @@ int main(){
         fclose(fptr);
         exit(1);
     }
-
-    int N = num_of_doubles / 7;
-
     double* buffer = (double*)malloc(file_size);
     if(!buffer){
         printf("Memory allocate failed\n");
@@ -295,6 +298,7 @@ int main(){
     }
     if(fread(buffer, sizeof(double), num_of_doubles, fptr)){};
 
+    int N = num_of_doubles / 7;
     Particle** plist = (Particle**)malloc(N * sizeof(Particle*));
     Particle* particles = (Particle*)malloc(N * sizeof(Particle));
     for(int i = 0; i < N; i++){
@@ -305,6 +309,10 @@ int main(){
         particles[i].force[0] = particles[i].force[1] = particles[i].force[2] = 0;
     }
     for(int i = 0; i < N; i++) plist[i] = &particles[i];
+    end = omp_get_wtime();
+    printf("Finish Input\n");
+    double input_time = (end - start) * 1000;
+    printf("Input time: %.3lf ms\n\n", input_time);
 
     // Build Octree
     printf("Start Building Octree\n");
@@ -348,6 +356,7 @@ int main(){
 
     // Output the force vectors
     printf("Start Output\n");
+    start = omp_get_wtime();
     FILE* fcsv;
     fcsv = fopen(outfile, "w");
     if(!fcsv){
@@ -358,11 +367,14 @@ int main(){
         fprintf(fcsv, "%.10e,%.10e,%.10e\n", particles[i].force[0], particles[i].force[1], particles[i].force[2]);
     }
     fclose(fcsv);
-    printf("Finish Output\n");
 
     free(plist);
     freeTree(root);
     free(particles);
     free(buffer);
+    end = omp_get_wtime();
+    printf("Finish Output\n");
+    double output_time = (end - start) * 1000;
+    printf("Output time: %.3lf ms\n\n", output_time);
     return 0;
 }
