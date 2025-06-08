@@ -110,6 +110,7 @@ int main() {
 
     double start, end;
     printf("Start force evaluation\n");
+    fflush(stdout);
     start = omp_get_wtime();
     compute_gravity(particles, forces);
     end = omp_get_wtime();

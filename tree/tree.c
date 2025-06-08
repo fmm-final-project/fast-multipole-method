@@ -300,6 +300,7 @@ int main(){
 
     // Build Octree
     printf("Start Building Octree\n");
+    fflush(stdout);
     start = omp_get_wtime();
     Cell* root = createCell(plist, N);
     subdivideCell(root);
@@ -310,6 +311,7 @@ int main(){
 
     // Compute Multipole Expansion for each cell
     printf("Start Multipole Expansion\n");
+    fflush(stdout);
     start = omp_get_wtime();
     computeMassDistribution(root);
     end = omp_get_wtime();
@@ -319,6 +321,7 @@ int main(){
 
     // Evaluate Force on every particles
     printf("Start Force Evaluation\n");
+    fflush(stdout);
     start = omp_get_wtime();
     for(int i = 0; i < N; i++) evaluateForceOnParticle(&particles[i], root);
     end = omp_get_wtime();
