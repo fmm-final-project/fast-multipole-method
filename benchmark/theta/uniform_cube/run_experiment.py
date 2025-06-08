@@ -5,8 +5,8 @@ import numpy as np
 import re
 
 thetas = np.linspace(0.2, 0.8, 61)
-exe_name = "./tree2fmm"
-outfolder = 'fmm_output/'
+exe_name = "./tree"
+outfolder = 'tree_output/'
 datafile = "datafile/uniform_cube_3d_1e6.bin"
 direct_result = "direct_result/force_direct_uniform_cube_3d_1e6.csv"
 
@@ -53,6 +53,9 @@ for theta in thetas:
     times = parse_time(log)
     errors = compute_error(direct_result, outfile)
 
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
     summary.append({
         "theta": theta,
         "Ex_error": errors[0],
@@ -62,5 +65,5 @@ for theta in thetas:
     })
 
 df_summary = pd.DataFrame(summary)
-df_summary.to_csv(outfolder + "/summary_results_fmm.csv", index=False)
+df_summary.to_csv(outfolder + "/summary_results_tree.csv", index=False)
 print(df_summary)
