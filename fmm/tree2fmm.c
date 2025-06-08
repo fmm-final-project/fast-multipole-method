@@ -197,13 +197,13 @@ void dualTreeWalk(Cell* A, Cell* B){
         double r3 = r2 * r;
         double r5 = r2 * r3;
         double r7 = r2 * r5;
-        double c1 = -3.0 * G / r5;
-        double c2 = 7.5 * G / r7;
+        double c1 = -3.0 / r5;
+        double c2 = 7.5 / r7;
 
         // Compute L1
         for(int i = 0; i < 3; i++){
-            B->L1[i] += -G * A->mass * dx[i] / r3;
-            A->L1[i] += -G * B->mass * (-dx[i]) / r3;
+            B->L1[i] += -A->mass * dx[i] / r3;
+            A->L1[i] += -B->mass * (-dx[i]) / r3;
         }
 
         // New 25 flops
@@ -224,8 +224,8 @@ void dualTreeWalk(Cell* A, Cell* B){
         // Compute L2
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
-                B->L2[i][j] += -G * A->mass * (3 * dx[i] * dx[j] / r5 - (i == j ? 1.0/r3 : 0));
-                A->L2[i][j] += -G * B->mass * (3 * (-dx[i]) * (-dx[j]) / r5 - (i == j ? 1.0/r3 : 0));
+                B->L2[i][j] += -A->mass * (3 * dx[i] * dx[j] / r5 - (i == j ? 1.0/r3 : 0));
+                A->L2[i][j] += -B->mass * (3 * (-dx[i]) * (-dx[j]) / r5 - (i == j ? 1.0/r3 : 0));
             }
         }
         /*
@@ -238,12 +238,12 @@ void dualTreeWalk(Cell* A, Cell* B){
                         // Coefficients for B's L2
                         double coeffB = ((i == m && j == n) + (i == n && j == m)
                                         - 5.0 * dx[i] * dx[j] * dx[m] * dx[n] / r4) / r5;
-                        B->L2[i][j] += -1.5 * G * A->quad[m][n] * coeffB;
+                        B->L2[i][j] += -1.5 * A->quad[m][n] * coeffB;
 
                         // Coefficients for A's L2 (reverse dx)
                         double coeffA = ((i == m && j == n) + (i == n && j == m)
                                         - 5.0 * (-dx[i]) * (-dx[j]) * (-dx[m]) * (-dx[n]) / r4) / r5;
-                        A->L2[i][j] += -1.5 * G * B->quad[m][n] * coeffA;
+                        A->L2[i][j] += -1.5 * B->quad[m][n] * coeffA;
                     }
                 }
             }
@@ -253,10 +253,7 @@ void dualTreeWalk(Cell* A, Cell* B){
     }
 
     // Split into subnodes for new pairs
-    int A_internal = (A->nParticles == 0);
-    int B_internal = (B->nParticles == 0);
-
-    if(A_internal && B_internal){
+    if(A->nParticles == 0 && B->nParticles == 0){
         // Open the larger one
         if(A->size >= B->size){
             for(int i = 0; i < 8; i++){
@@ -270,30 +267,27 @@ void dualTreeWalk(Cell* A, Cell* B){
                 dualTreeWalk(A, B->children[i]);
             }
         }
-        
     }
-    else if(A_internal){
+    else if(A->nParticles == 0){
         // Only A can open
         for(int i = 0; i < 8; i++) {
             if(!A->children[i]) continue;
             dualTreeWalk(A->children[i], B);
         }
     }
-    else if(B_internal){
+    else if(B->nParticles == 0){
         // Only B can open
         for(int j = 0; j < 8; j++){
             if(!B->children[j]) continue;
             dualTreeWalk(A, B->children[j]);
         }
     }
-
-    if(A->nParticles > 0 && B->nParticles > 0){
+    else{
         // direct sum between every particle in A and every in B
         for(int i = 0; i < A->nParticles; i++){
             Particle *p = A->particles[i];
             for(int j = 0; j < B->nParticles; j++){
                 Particle *q = B->particles[j];
-                if(p == q) continue;
                 direct_count += 2;
                 double dx[3], r2 = EPSILON;
                 for(int d = 0; d < 3; d++){
@@ -301,14 +295,13 @@ void dualTreeWalk(Cell* A, Cell* B){
                     r2 += dx[d] * dx[d];
                 }
                 double inv3 = 1.0 / (r2 * sqrt(r2));
-                double f = -G * p->mass * q->mass * inv3;
+                double f = -p->mass * q->mass * inv3;
                 for(int d = 0; d < 3; d++){
                     p->force[d] += f * dx[d];
                     q->force[d] += -f * dx[d];
                 }
             }
         }
-        return;
     }
 }
 
@@ -339,7 +332,6 @@ void localPassDown(Cell* cell){
             // Direct summation
             for(int j = i + 1; j < cell->nParticles; j++){
                 Particle* q = cell->particles[j];
-                if(p == q) continue;
                 direct_count += 2;
                 double dx[3], r2 = EPSILON;
                 for(int d = 0; d < 3; d++){
@@ -347,7 +339,7 @@ void localPassDown(Cell* cell){
                     r2 += dx[d] * dx[d];
                 }
                 double inv3 = 1.0 / (r2 * sqrt(r2));
-                double f = -G * p->mass * q->mass * inv3;
+                double f = -p->mass * q->mass * inv3;
                 for(int d = 0; d < 3; d++){
                     p->force[d] += f * dx[d];
                     q->force[d] -= f * dx[d];
@@ -405,7 +397,6 @@ int main(){
             if(sscanf(line, "%s", outfile)){}
         }
     }
-
     fclose(fp);
 
     // Input particle data
@@ -437,8 +428,8 @@ int main(){
     }
     if(fread(buffer, sizeof(double), num_of_doubles, fptr)){};
 
-    Particle **plist = malloc(N * sizeof(Particle*));
-    Particle *particles = malloc(N * sizeof(Particle));
+    Particle** plist = (Particle**)malloc(N * sizeof(Particle*));
+    Particle* particles = (Particle*)malloc(N * sizeof(Particle));
     for(int i = 0; i < N; i++){
         particles[i].mass = buffer[i * 7];
         particles[i].x[0] = buffer[i * 7 + 1];
@@ -450,6 +441,7 @@ int main(){
 
     // Build Octree
     printf("Start Building Octree\n");
+    fflush(stdout);
     start = omp_get_wtime();
     Cell* root = createCell(plist, N);
     subdivideCell(root);
@@ -460,6 +452,7 @@ int main(){
 
     // Compute Multipole Expansion for each cell
     printf("Start Multipole Expansion\n");
+    fflush(stdout);
     start = omp_get_wtime();
     computeMassDistribution(root);
     end = omp_get_wtime();
@@ -469,6 +462,7 @@ int main(){
 
     // Compute local expansion using dual tree walk
     printf("Start Dual Tree Walk\n");
+    fflush(stdout);
     start = omp_get_wtime();
     dualTreeWalk(root, root);
     end = omp_get_wtime();
@@ -478,8 +472,14 @@ int main(){
 
     // Compute L2L and evaluation
     printf("Start Local Passing Down\n");
+    fflush(stdout);
     start = omp_get_wtime();
     localPassDown(root);
+    for(int i = 0; i < N; i++){
+        for(int d = 0; d < 3; d++){
+            particles[i].force[d] *= G;
+        }
+    }
     end = omp_get_wtime();
     printf("Finish Local Passing Down\n");
     double local_time = (end - start) * 1000;
