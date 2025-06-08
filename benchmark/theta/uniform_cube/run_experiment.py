@@ -4,10 +4,11 @@ import pandas as pd
 import numpy as np
 import re
 
-thetas = [0.2, 0.4, 0.6, 0.8]
+thetas = np.linspace(0.2, 0.8, 61)
 exe_name = "./tree2fmm"
-datafile = "uniform_cube_3d_1e6.bin"
-direct_result = "force_direct_uniform_cube_3d_1e6.csv"
+outfolder = 'fmm_output/'
+datafile = "datafile/uniform_cube_3d_1e6.bin"
+direct_result = "direct_result/force_direct_uniform_cube_3d_1e6.csv"
 
 def generate_input(theta, output_file):
     with open("tree.in", "w") as f:
@@ -45,7 +46,7 @@ def compute_error(reference_csv, test_csv):
 summary = []
 
 for theta in thetas:
-    outfile = f"force_theta_{theta:.1f}.csv"
+    outfile = outfolder + f"force_theta_{theta:.5f}.csv"
     generate_input(theta, outfile)
     print(f"Running theta = {theta}")
     log = run_fmm_and_capture_output()
@@ -61,5 +62,5 @@ for theta in thetas:
     })
 
 df_summary = pd.DataFrame(summary)
-df_summary.to_csv("summary_results.csv", index=False)
+df_summary.to_csv(outfolder + "/summary_results_fmm.csv", index=False)
 print(df_summary)
