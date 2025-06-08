@@ -1,19 +1,25 @@
+Start Input
+Finish Input
+Input time: 5.529 ms
+
 Start Building Octree
 Finish Building Octree
-Building time: 16.456 ms
+Building time: 55.361 ms
 
 Start Multipole Expansion
 Finish Multipole Expansion
-Expansion time: 4.610 ms
+Expansion time: 3.690 ms
 
 Start Force Evaluation
 Finish Force Evaluation
-Evaluation time: 2154.538 ms
+Evaluation time: 1575.495 ms
 
 Direct eval: 266918986
 Direct ratio: 2.66922 %
 
-Total execution time: 2175.603 ms
+Total execution time: 1634.546 ms
 
 Start Output
 Finish Output
+Output time: 86.476 ms
+
