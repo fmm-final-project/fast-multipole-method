@@ -1,0 +1,1 @@
+This folder is used to confirm which version of the program you are running and to remove any ambiguity.
