@@ -49,10 +49,12 @@ def plummer_sphere_3d(
 
     def sample_velocity(r):
         v_esc = plummer_escape_velocity(r)
+        v_ratio = np.sqrt(2.0/9.0)
+        f_max =  v_ratio**2 * (1 - v_ratio**2)**(7.0/2.0) * v_esc**2
         while True:
             v = np.random.uniform(0, v_esc)
-            f_v = (1 - (v / v_esc) ** 2) ** 3.5
-            if np.random.uniform(0, 1) < f_v:
+            f_v = v**2 * (1 - (v / v_esc) ** 2) ** 3.5
+            if np.random.uniform(0, 1) < f_v / f_max:
                 return v
 
     vx = np.zeros(n_particles)
@@ -93,9 +95,9 @@ def plummer_sphere_3d(
 # 範例呼叫
 if __name__ == "__main__":
     plummer_sphere_3d(
-    n_particles=int(1e6),
+    n_particles=int(1e5),
     scale_radius=50.0,
-    total_mass=1.0*int(1e6),
+    total_mass=1.0*int(1e5),
     mass_std=None,
-    filename=path+"plummer_sphere_3d_1e6"
+    filename=path+"plummer_vel_3d_1e5"
     )
