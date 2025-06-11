@@ -203,21 +203,23 @@ void dualTreeWalk(Cell* A, Cell* B){
         double r = sqrt(r2);
         double r3 = r2 * r;
         double r5 = r2 * r3;
-        double r7 = r2 * r5;
-        double c1 = -3.0 / r5;
-        double c2 = 7.5 / r7;
+        //double r7 = r2 * r5;
+        //double c1 = -3.0 / r5;
+        //double c2 = 7.5 / r7;
 
         // New 25 flops
+        /*
         double QA_r[3] = {0.0, 0.0, 0.0};
         for(int i = 0; i < 3; i++){
             QA_r[i] = A->quad[i][0] * dx[0] + A->quad[i][1] * dx[1] + A->quad[i][2] * dx[2];
         }
         double r_QA_r = dx[0] * QA_r[0] + dx[1] * QA_r[1] + dx[2] * QA_r[2];
+        */
         omp_set_lock(&B->lock);
         for(int i = 0; i < 3; i++){
             // Compute L1
             B->L1[i] += -A->mass * dx[i] / r3;
-            B->L1[i] += c1 * QA_r[i] + c2 * r_QA_r * dx[i];
+            //B->L1[i] += c1 * QA_r[i] + c2 * r_QA_r * dx[i];
             // Compute L2
             for(int j = 0; j < 3; j++){
                 B->L2[i][j] += -A->mass * (3 * dx[i] * dx[j] / r5 - (i == j ? 1.0/r3 : 0));
@@ -225,16 +227,18 @@ void dualTreeWalk(Cell* A, Cell* B){
         }
         omp_unset_lock(&B->lock);
 
+        /*
         double QB_r[3] = {0.0, 0.0, 0.0};
         for(int i = 0; i < 3; i++){
             QB_r[i] = B->quad[i][0] * (-dx[0]) + B->quad[i][1] * (-dx[1]) + B->quad[i][2] * (-dx[2]);
         }
         double r_QB_r = (-dx[0]) * QB_r[0] + (-dx[1]) * QB_r[1] + (-dx[2]) * QB_r[2];
+        */
         omp_set_lock(&A->lock);
         for(int i = 0; i < 3; i++){
             // Compute L1
             A->L1[i] += -B->mass * (-dx[i]) / r3;
-            A->L1[i] += c1 * QB_r[i] + c2 * r_QB_r * (-dx[i]);
+            //A->L1[i] += c1 * QB_r[i] + c2 * r_QB_r * (-dx[i]);
             // Compute L2
             for(int j = 0; j < 3; j++){
                 A->L2[i][j] += -B->mass * (3 * (-dx[i]) * (-dx[j]) / r5 - (i == j ? 1.0/r3 : 0));
