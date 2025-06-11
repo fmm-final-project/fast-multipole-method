@@ -16,7 +16,7 @@ def generate_input(nThreads):
         f.write(f"""# G
 1.0
 # THETA
-0.2
+0.3
 # MAX_PARTICLES_PER_CELL
 10
 # datafile
@@ -56,5 +56,5 @@ for nThreads in range(1, 1 + Max_nThreads):
     })
 
 df_summary = pd.DataFrame(summary)
-df_summary.to_csv(outfolder + "/summary_results_fmm.csv", index=False)
+df_summary.to_csv(outfolder + "/summary_results.csv", index=False)
 print(df_summary)

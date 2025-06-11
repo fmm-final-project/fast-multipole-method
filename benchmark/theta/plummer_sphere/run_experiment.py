@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 import re
 
-thetas = np.linspace(0.2, 0.8, 13)
+thetas = np.linspace(0.2, 0.8, 61)
 exe_name = "./tree"
 outfolder = 'tree_output/'
-datafile = "datafile/plummer_sphere_3d_1e6.bin"
-direct_result = "direct_result/force_direct_plummer_sphere_3d_1e6.csv"
+datafile = "datafile/uniform_cube_3d_1e6.bin"
+direct_result = "direct_result/force_direct_uniform_cube_3d_1e6.csv"
 
 def generate_input(theta, output_file):
     with open("tree.in", "w") as f:
