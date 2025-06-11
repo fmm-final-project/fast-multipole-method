@@ -1,29 +1,29 @@
 Start Input
 Finish Input
-Input time: 8.121 ms
+Input time: 7.394 ms
 
 Start Building Octree
 Finish Building Octree
-Building time: 11.867 ms
+Building time: 20.308 ms
 
 Start Multipole Expansion
 Finish Multipole Expansion
-Expansion time: 3.085 ms
+Expansion time: 4.527 ms
 
 Start Dual Tree Walk
 Finish Dual Tree Walk
-Dual Tree Walk time: 1539.580 ms
+Dual Tree Walk time: 538.008 ms
 
 Start Local Passing Down
 Finish Local Passing Down
-Local Passing Down time: 41.529 ms
+Local Passing Down time: 40.901 ms
 
-Direct count 375288652
-Direct Ratio = 3.752924 %
+Direct count 123004034
+Direct Ratio = 1.230053 %
 
 Number of Treads: 8
-Total execution time: 1596.062 ms
+Total execution time: 603.743 ms
 
 Start Output
 Finish Output
-Output time: 97.373 ms
+Output time: 91.079 ms
