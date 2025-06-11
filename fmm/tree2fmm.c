@@ -196,9 +196,9 @@ void dualTreeWalk(Cell* A, Cell* B){
         double r = sqrt(r2);
         double r3 = r2 * r;
         double r5 = r2 * r3;
-        double r7 = r2 * r5;
-        double c1 = -3.0 / r5;
-        double c2 = 7.5 / r7;
+        //double r7 = r2 * r5;
+        //double c1 = -3.0 / r5;
+        //double c2 = 7.5 / r7;
 
         // Compute L1
         for(int i = 0; i < 3; i++){
@@ -207,6 +207,7 @@ void dualTreeWalk(Cell* A, Cell* B){
         }
 
         // New 25 flops
+        /*
         double QA_r[3] = {0.0, 0.0, 0.0};
         for(int i = 0; i < 3; i++){
             QA_r[i] = A->quad[i][0] * dx[0] + A->quad[i][1] * dx[1] + A->quad[i][2] * dx[2];
@@ -220,6 +221,7 @@ void dualTreeWalk(Cell* A, Cell* B){
         }
         double r_QB_r = (-dx[0]) * QB_r[0] + (-dx[1]) * QB_r[1] + (-dx[2]) * QB_r[2];
         for(int k = 0; k < 3; k++) A->L1[k] += c1 * QB_r[k] + c2 * r_QB_r * (-dx[k]);
+        */
 
         // Compute L2
         for(int i = 0; i < 3; i++){
