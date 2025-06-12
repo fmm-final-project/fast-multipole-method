@@ -140,11 +140,11 @@ def uniform_square_2d(
 # 範例呼叫
 if __name__ == "__main__":
     uniform_cube_3d(
-        n_particles=int(1e6),
+        n_particles=int(1e5),
         box_size=100.0,
         mass=1.0,
         mass_std=0.1,
         velocity=(0.0, 0.0),
         velocity_std=0.5,
-        filename=path+"uniform_cube_3d_1e6"
+        filename=path+"uniform_cube_3d_1e5"
     )
