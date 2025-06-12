@@ -570,6 +570,7 @@ int main(){
     // Output the force vectors
     printf("Start Output\n");
     start = omp_get_wtime();
+    /*
     FILE* fcsv;
     fcsv = fopen(outfile, "w");
     if(!fcsv){
@@ -580,6 +581,21 @@ int main(){
         fprintf(fcsv, "%.10e,%.10e,%.10e\n", force[i][0], force[i][1], force[i][2]);
     }
     fclose(fcsv);
+    */
+
+    FILE* fbin = fopen(outfile, "wb");
+    if(!fp){
+        perror("Failed to open file");
+        return 1;
+    }
+
+    // Write the array to file
+    size_t written = fwrite(force[0], sizeof(double), 3 * N, fbin);
+    if(written != 3 * N){
+        perror("Failed to write data");
+    }
+    // Close the file
+    fclose(fbin);
 
     free(plist);
     freeTree(root);
