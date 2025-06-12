@@ -546,7 +546,7 @@ int main(){
     fflush(stdout);
     start = omp_get_wtime();
     localPassDown(root);
-    #pragma omp parallel for schedule(static)
+    //#pragma omp parallel for schedule(static)
     for(int i = 0; i < N; i++){
         for(int d = 0; d < 3; d++){
             force[i][d] *= G;
