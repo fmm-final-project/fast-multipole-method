@@ -151,6 +151,7 @@ int main() {
 
     // Output the force vectors
     printf("Start output\n");
+    /*
     FILE* fcsv;
     fcsv = fopen(outfile, "w");
     if(!fcsv){
@@ -161,7 +162,21 @@ int main() {
         fprintf(fcsv, "%.10e,%.10e,%.10e\n", forces[i][0], forces[i][1], forces[i][2]);
     }
     fclose(fcsv);
+    */
 
+    FILE* fbin = fopen(outfile, "wb");
+    if(!fbin){
+        perror("Failed to open file");
+        return 1;
+    }
+
+    // Write the array to file
+    size_t written = fwrite(forces[0], sizeof(double), 3 * N, fbin);
+    if(written != 3 * N){
+        perror("Failed to write data");
+    }
+    // Close the file
+    fclose(fbin);
     printf("Finish output\n");
 
     free(forces);
