@@ -206,7 +206,7 @@ if __name__ == "__main__":
 
     summary = []
 
-    alpha = 1.25
+    alpha = 1e10
 
 
     method = 'fmm'

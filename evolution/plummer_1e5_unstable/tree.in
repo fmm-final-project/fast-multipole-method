@@ -1,0 +1,12 @@
+# G
+1.0
+# THETA
+0.3
+# MAX_PARTICLES_PER_CELL
+10
+# datafile
+particles_fmm/half_step.bin
+# outfile
+force/force_K2.bin
+# NUM_OF_THREADS
+24
