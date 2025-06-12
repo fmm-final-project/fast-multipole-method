@@ -344,7 +344,7 @@ int main(){
         exit(1);
     }
     for (int i = 0; i < N; i++) {
-        fprintf(fcsv, "%.10e,%.10e,%.10e\n", particles[i].force[0], particles[i].force[1], particles[i].force[2]);
+        fprintf(fcsv, "%.16e,%.16e,%.16e\n", particles[i].force[0], particles[i].force[1], particles[i].force[2]);
     }
     fclose(fcsv);
     printf("Finish Output\n");

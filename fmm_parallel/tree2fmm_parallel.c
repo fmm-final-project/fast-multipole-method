@@ -577,7 +577,7 @@ int main(){
         exit(1);
     }
     for (int i = 0; i < N; i++) {
-        fprintf(fcsv, "%.10e,%.10e,%.10e\n", force[i][0], force[i][1], force[i][2]);
+        fprintf(fcsv, "%.16e,%.16e,%.16e\n", force[i][0], force[i][1], force[i][2]);
     }
     fclose(fcsv);
 
