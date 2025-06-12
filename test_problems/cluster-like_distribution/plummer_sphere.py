@@ -91,13 +91,90 @@ def plummer_sphere_3d(
 
     print(f"Saved {n_particles} particles to '{filename}.bin' and '{filename}.csv'.")
 
+def double_plummer_sphere_3d(
+    n_particles_total,
+    scale_radius1=50.0,
+    scale_radius2=50.0,
+    total_mass1=None,
+    total_mass2=None,
+    offset_pos=(200.0, 0.0, 0.0),
+    offset_vel=(-0.5, 0.0, 0.0),
+    filename="particles_double",
+):
+    """
+    生成 Double Plummer 分布的粒子群，合併輸出。
 
-# 範例呼叫
-if __name__ == "__main__":
+    offset_pos: 第二個 Plummer 球的相對位置
+    offset_vel: 第二個 Plummer 球的相對速度
+    """
+
+    if total_mass1 is None:
+        total_mass1 = n_particles_total / 2.0
+    if total_mass2 is None:
+        total_mass2 = n_particles_total / 2.0
+
+    n1 = n_particles_total // 2
+    n2 = n_particles_total - n1
+
+    # 第一個 Plummer 球（在原點）
     plummer_sphere_3d(
-    n_particles=int(1e5),
-    scale_radius=50.0,
-    total_mass=1.0*int(1e5),
-    mass_std=None,
-    filename=path+"plummer_vel_3d_1e5"
+        n_particles=n1,
+        scale_radius=scale_radius1,
+        total_mass=total_mass1,
+        filename="plummer1_temp"
+    )
+    p1 = np.fromfile("plummer1_temp.bin", dtype=np.float64).reshape(-1, 7)
+    p1[:, 1:4] -= np.array(offset_pos) / 2
+    p1[:, 4:7] -= np.array(offset_vel) / 2
+
+    # 第二個 Plummer 球（偏移位置和速度）
+    plummer_sphere_3d(
+        n_particles=n2,
+        scale_radius=scale_radius2,
+        total_mass=total_mass2,
+        filename="plummer2_temp"
+    )
+    p2 = np.fromfile("plummer2_temp.bin", dtype=np.float64).reshape(-1, 7)
+    p2[:, 1:4] += np.array(offset_pos) / 2
+    p2[:, 4:7] += np.array(offset_vel) / 2
+
+    # 合併
+    particles = np.vstack([p1, p2])
+
+    # 寫入檔案
+    with open(filename + ".bin", "wb") as f:
+        particles.astype(np.float64).tofile(f)
+
+    with open(filename + ".csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(particles)
+
+    # 清理暫存檔
+    os.remove("plummer1_temp.bin")
+    os.remove("plummer2_temp.bin")
+    os.remove("plummer1_temp.csv")
+    os.remove("plummer2_temp.csv")
+
+    print(f"Saved double Plummer model to '{filename}.bin' and '{filename}.csv'.")
+
+
+
+# # 範例呼叫
+# if __name__ == "__main__":
+#     plummer_sphere_3d(
+#     n_particles=int(1e5),
+#     scale_radius=50.0,
+#     total_mass=1.0*int(1e5),
+#     mass_std=None,
+#     filename=path+"plummer_vel_3d_1e5"
+#     )
+
+if __name__ == "__main__":
+    double_plummer_sphere_3d(
+        n_particles_total=int(2e5),
+        scale_radius1=50.0,
+        scale_radius2=50.0,
+        offset_pos=(200.0, 0.0, 0.0),
+        offset_vel=(-0.5, 0.0, 0.0),
+        filename=path + "double_plummer_2e5"
     )
