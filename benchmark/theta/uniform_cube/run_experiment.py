@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 import re
 
-thetas = np.linspace(0.2, 0.8, 61)
+thetas = np.linspace(0.2, 1.0, 17)
 exe_name = "./tree"
 outfolder = 'tree_output/'
 datafile = "datafile/uniform_cube_3d_1e6.bin"
-direct_result = "direct_result/force_direct_uniform_cube_3d_1e6.csv"
+direct_result = "direct_result/force_direct_parallel.csv"
 
 def generate_input(theta, output_file):
     with open("tree.in", "w") as f:
@@ -65,5 +65,5 @@ for theta in thetas:
     })
 
 df_summary = pd.DataFrame(summary)
-df_summary.to_csv(outfolder + "/summary_results_tree.csv", index=False)
+df_summary.to_csv(outfolder + "/summary_results.csv", index=False)
 print(df_summary)

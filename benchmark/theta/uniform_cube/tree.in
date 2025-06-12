@@ -1,0 +1,10 @@
+# G
+1.0
+# THETA
+1.0
+# MAX_PARTICLES_PER_CELL
+10
+# datafile
+datafile/uniform_cube_3d_1e6.bin
+# outfile
+tree_output/force_theta_1.00000.csv
