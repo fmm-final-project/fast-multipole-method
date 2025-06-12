@@ -7,6 +7,6 @@
 # datafile
 particles.bin
 # outfile
-force_tree_parallel.csv
+force_tree_parallel.bin
 # NUM_OF_THREADS
 8
