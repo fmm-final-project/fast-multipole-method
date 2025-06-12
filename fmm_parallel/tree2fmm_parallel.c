@@ -584,7 +584,7 @@ int main(){
     */
 
     FILE* fbin = fopen(outfile, "wb");
-    if(!fp){
+    if(!fbin){
         perror("Failed to open file");
         return 1;
     }
