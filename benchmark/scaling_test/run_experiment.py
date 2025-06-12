@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import re
 
-exe_name = "./naive_gravity"
+exe_name = "./tree"
 outfolder = ''
 
 outfile = outfolder + "force.csv"
@@ -37,7 +37,7 @@ def parse_time(log_text):
 
 summary = []
 
-for n in range(1, 1 + 6):
+for n in range(1, 1 + 7):
     generate_input(f'uniform_cube_3d_1e{n}.bin')
     print(f"Running n = {n}")
     log = run_fmm_and_capture_output()
@@ -52,5 +52,5 @@ for n in range(1, 1 + 6):
     })
 
 df_summary = pd.DataFrame(summary)
-df_summary.to_csv(outfolder + "naive_summary_results.csv", index=False)
+df_summary.to_csv(outfolder + "tree_summary_results.csv", index=False)
 print(df_summary)
