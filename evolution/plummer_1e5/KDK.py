@@ -44,21 +44,22 @@ def run_KDK_step(dt=0.01, exe_name=exe_name, method=method, infile='particles/pl
     vel = particles[:, 4:7]   # 速度 (vx, vy, vz)
     print(f"成功讀取 {len(particles)} 顆粒子。")
 
-    if os.path.exists(f'force/force_K1.csv'):
-        os.remove('force/force_K1.csv')
+    if os.path.exists(f'force/force_K1.bin'):
+        os.remove('force/force_K1.bin')
 
     # 1.5. run ./tree2fmm_parallel
-    generate_input(infile, 'force/force_K1.csv')
+    generate_input(infile, 'force/force_K1.bin')
     subprocess.run([exe_name])
 
     # 2. 讀取 tree2fmm_parallel 計算出的力，並計算加速度 a = F/m
     try:
-        force_df = pd.read_csv('force/force_K1.csv', header=None)
-        force = force_df.to_numpy()
+        force = np.fromfile('force/force_K1.bin', dtype=np.float64)
+        # 將一維陣列重塑為 (N, 3) 的形狀
+        force = force.reshape(-1, 3)
         # 加速度 a = F/m。NumPy的廣播機制會自動處理維度。
         accel = force / mass
     except FileNotFoundError:
-        print(f"錯誤: force_K1.csv 不存在。請確保 {exe_name} 已成功執行。")
+        print(f"錯誤: force_K1.bin 不存在。請確保 {exe_name} 已成功執行。")
         return
     print("成功讀取力，並計算出加速度。")
 
@@ -82,19 +83,20 @@ def run_KDK_step(dt=0.01, exe_name=exe_name, method=method, infile='particles/pl
     updated_particles.tofile(f'particles_{method}/half_step.bin')
 
     # 5.5 run ./tree2fmm_parallel
-    if os.path.exists('force/force_K2.csv'):
-        os.remove('force/force_K2.csv')
-    generate_input(f'particles_{method}/half_step.bin', 'force/force_K2.csv')
+    if os.path.exists('force/force_K2.bin'):
+        os.remove('force/force_K2.bin')
+    generate_input(f'particles_{method}/half_step.bin', 'force/force_K2.bin')
     subprocess.run([exe_name])
 
     # 6. 讀取 tree2fmm_parallel 計算出的力，並計算加速度 a = F/m
     try:
-        force_df = pd.read_csv('force/force_K2.csv', header=None)
-        force = force_df.to_numpy()
+        force = np.fromfile('force/force_K2.bin', dtype=np.float64)
+        # 將一維陣列重塑為 (N, 3) 的形狀
+        force = force.reshape(-1, 3)
         # 加速度 a = F/m。NumPy的廣播機制會自動處理維度。
         accel = force / mass
     except FileNotFoundError:
-        print(f"錯誤: force_K2.csv 不存在。請確保 {exe_name} 已成功執行。")
+        print(f"錯誤: force_K2.bin 不存在。請確保 {exe_name} 已成功執行。")
         return
     print("成功讀取力，並計算出加速度。")
 

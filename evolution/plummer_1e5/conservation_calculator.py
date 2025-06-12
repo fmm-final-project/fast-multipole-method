@@ -228,6 +228,8 @@ if __name__ == "__main__":
     df_summary.to_csv(f"conservation/conservation_results_alpha{alpha}_{method}.csv", index=False)
     print(df_summary)
 
+    summary = []
+
     method = 'tree'
     for i in range(201):
         print("執行次數:", i, "方法", method)
@@ -246,6 +248,8 @@ if __name__ == "__main__":
     df_summary = pd.DataFrame(summary)
     df_summary.to_csv(f"conservation/conservation_results_alpha{alpha}_{method}.csv", index=False)
     print(df_summary)
+
+    summary = []
 
     method = 'naive'
     for i in range(201):
