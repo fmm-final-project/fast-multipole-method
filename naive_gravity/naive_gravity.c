@@ -147,7 +147,7 @@ int main() {
     printf("Finish force evaluation\n\n");
     printf("Evaluation count: %llu\n", count);
     double total_time = (end - start) * 1000;
-    printf("Total execution time: %.3lf ms\n", total_time);
+    printf("Total execution time: %.5lf ms\n", total_time);
 
     // Output the force vectors
     printf("Start output\n");
