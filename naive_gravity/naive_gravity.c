@@ -3,14 +3,21 @@
 #include <math.h>
 #include <omp.h>
 
-#define G 1.0                    // Gravitational constant
 #define EPSILON 1.0e-12          // Softening factor to prevent division by zero
+#define MAX_LINE_LEN 1024
 
 typedef struct {
     double mass;
     double pos[3];   // x, y, z
     double vel[3];   // vx, vy, vz
 } Particle;
+
+// Input parameters
+double G;
+double THETA;
+int MAX_PARTICLES_PER_CELL;
+char datafile[MAX_LINE_LEN];
+char outfile[MAX_LINE_LEN];
 
 int N;           // Number of particles
 unsigned long long count = 0;
@@ -43,9 +50,40 @@ void compute_gravity(Particle particles[], double forces[][3]){
 
 int main() {
 
+    FILE *fp = fopen("tree.in", "r");
+    if(!fp){
+        printf("Failed to open file\n");
+        exit(1);
+    }
+    char line[MAX_LINE_LEN];
+    int lcount = 0;
+    while(fgets(line, sizeof(line), fp)){
+        if(line[0] == '#' || line[0] == '\n'){
+            continue;
+        }
+        lcount++;
+        if(lcount == 1){
+            if(sscanf(line, "%lf", &G)){}
+        }
+        else if(lcount == 2){
+            if(sscanf(line, "%lf", &THETA)){}
+        }
+        else if(lcount == 3){
+            if(sscanf(line, "%d", &MAX_PARTICLES_PER_CELL)){}
+        }
+        else if(lcount == 4){
+            if(sscanf(line, "%s", datafile)){}
+        }
+        else if(lcount == 5){
+            if(sscanf(line, "%s", outfile)){}
+        }
+    }
+
+    fclose(fp);
+
     printf("Start datafile input\n");
     FILE *fptr;
-    fptr = fopen("particles.bin", "rb");
+    fptr = fopen(datafile, "rb");
     if(!fptr){
         printf("Error opening file!\n");
         exit(1);
@@ -109,12 +147,12 @@ int main() {
     printf("Finish force evaluation\n\n");
     printf("Evaluation count: %llu\n", count);
     double total_time = (end - start) * 1000;
-    printf("Total time: %.3lf ms\n", total_time);
+    printf("Total execution time: %.5lf ms\n", total_time);
 
     // Output the force vectors
     printf("Start output\n");
     FILE* fcsv;
-    fcsv = fopen("force_direct.csv", "w");
+    fcsv = fopen(outfile, "w");
     if(!fcsv){
         printf("Failed to open output file!\n");
         exit(1);
@@ -124,17 +162,6 @@ int main() {
     }
     fclose(fcsv);
 
-    FILE* fbin;
-    fbin = fopen("force_direct.bin", "wb");
-    if(!fbin){
-        printf("Failed to open output file!\n");
-        exit(1);
-    }
-    size_t written = fwrite(forces, sizeof(double), 3 * N, fbin);
-    if(written != 3 * N){
-        printf("Failed to write all data!\n");
-    }
-    fclose(fbin);
     printf("Finish output\n");
 
     free(forces);
